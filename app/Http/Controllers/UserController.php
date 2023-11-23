@@ -8,12 +8,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
-{
-    public function createUser(Request $request)
-    {
+{     
+    public function createUser(Request $request){
         // This function creates a user and saves it in the DB
             $Vuser = Validator::make($request->all(), [
                 'name' => 'required',
@@ -35,7 +34,6 @@ class UserController extends Controller
                 'email' => $request->email,
                 'password' => Hash::make($request->password)
             ]);
-
             // This will return the user indicating that the user has been
             // created. In addition, it creates a token for that user
             return response()->json([
@@ -45,41 +43,77 @@ class UserController extends Controller
             ], 200);
     }
 
+    public function read(Request $request){
+        $userRead = auth()->user();
+        if($userRead){
+            $name = $userRead->name;
+            $email = $userRead->email;
 
-    public function login(Request $request){
-            $validate = Validator::make($request->all(),[
-                'email' => 'required|email',
-                'password' => 'required'
-            ]);
-            //checks if the user exists (if they are not provided)
-            if($validate->fails()){
-                return response()->json([
-                    'status' => false,
-                    'message' => 'validation error',
-                    'error' => $validate->errors()
-                ],401);
-            }
-            //checks if the user attempting to login has a user or not (found in DB or not)
-            if(!Auth::attempt($request->only(['email', 'password']))){
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Email or Password are incorrect',
-                ], 401);
-            }
-
-            $user = User::where('email', $request -> email) -> first();
-            return response() ->json([
+            return response()->json([
                 'status' => true,
-                'message' => 'Logged in successfully',
-                'token' => $user->createToken("API TOKEN")->plainTextToken
-            ], 200);  
+                'data' => [
+                    'name' => $name,
+                    'email' => $email,
+                ],
+            ]);
+        }
+        else{
+            return response()->json([
+                'status' => false,
+                'message' => 'No user to return',
+            ]);
+        }
+    }
+
+    public function Update(Request $request){
+        $user = auth()->user();
+
+        $request->validate([
+            'name' => 'string',
+            'email' => ['email', Rule::unique('users')->ignore(auth()->user()-id)],
+            'password' => 'min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).*$/',
+        ]);
+
+        if($request->has('name')){
+            $user->name = $request->input('name');
         }
 
-    public function logout(Request $request){
-    $request->user()->tokens()->delete();
-    return response()->json([
+        if($request->has('email')){
+            $user->email = $request->input('email');
+        }
+
+        if($request->has('password')){
+            $user->password = Hash::make($request->input('password'));
+        }
+
+        $user->save();
+
+        return response()->json([
             'status' => true,
-            'message' => 'Logout Successful',
-        ], 200);
+            'message' => 'User has been updated',
+            'data' => [
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+        ]);
+    }
+
+    public function Delete(Request $request){
+        $userDeleted = auth()->user();
+
+        if($user){
+            $userDeleted->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'User has been deleted',
+            ]);
+        }
+        else{
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found',
+            ]);
+        }
     }
 }

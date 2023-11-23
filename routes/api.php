@@ -2,7 +2,9 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SessionController;
 use App\Http\Controllers\UserController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -15,7 +17,9 @@ use App\Http\Controllers\UserController;
 */
 
 Route::post('/auth/register', [UserController::class, 'createUser'])->name('auth.register');
-Route::post('/auth/login', [UserController::class, 'login'])->name('auth.login');
-Route::post('/auth/logout', [UserController::class, 'logout'])->name('auth.logout')->middleware('auth:sanctum');
-
+Route::post('/auth/login', [SessionController::class, 'login'])->name('auth.login')->middleware('auth:sanctum');
+Route::post('/auth/logout', [SessionController::class, 'logout'])->name('auth.logout')->middleware('auth:sanctum');
+Route::post('/auth/Delete', [UserController::class, 'Delete'])->name('auth.delete')->middleware('auth:sanctum');
+Route::post('auth/Update',[UserController::class, 'Update'])->name('auth.update')->middleware('auth:sanctum');
+Route::post('auth/Read', [UserController::class, 'read'])->name('auth.read')->middleware('auth:sanctum');
 ?>
