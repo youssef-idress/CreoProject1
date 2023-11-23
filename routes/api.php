@@ -14,6 +14,8 @@ use App\Http\Controllers\UserController;
 |
 */
 
-Route::post('/auth/register', [UserController::class, 'createUser']);
-Route::post('/auth/login', [UserController::class, 'loginUser']);
-Route::post('/auth/logout', [UserController::class, 'logout']);
+Route::post('/auth/register', [UserController::class, 'createUser'])->name('auth.register');
+Route::post('/auth/login', [UserController::class, 'login'])->name('auth.login');
+Route::post('/auth/logout', [UserController::class, 'logout'])->name('auth.logout')->middleware('auth:sanctum');
+
+?>

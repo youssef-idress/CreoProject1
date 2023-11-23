@@ -9,16 +9,16 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
+
 class UserController extends Controller
 {
     public function createUser(Request $request)
     {
         // This function creates a user and saves it in the DB
-        try {
             $Vuser = Validator::make($request->all(), [
                 'name' => 'required',
                 'email' => 'required|email|unique:users,email',
-                'password' => 'required|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])|confirmed/',
+                'password' => 'required|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).*$/|confirmed',
             ]);
 
             // Just to check whether the parameters provided are actually unique or provided
@@ -41,19 +41,12 @@ class UserController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'User Created Successfully',
-                'token' => $user->createToken("API TOKEN")->plainTextToken()
+                'token' => $user->createToken("API TOKEN")->plainTextToken
             ], 200);
-        } catch (\Throwable $error) {
-            return response()->json([
-                'status' => false,
-                'message' => $error->getMessage()
-            ], 500);
-        }
     }
 
 
     public function login(Request $request){
-        try{
             $validate = Validator::make($request->all(),[
                 'email' => 'required|email',
                 'password' => 'required'
@@ -78,32 +71,15 @@ class UserController extends Controller
             return response() ->json([
                 'status' => true,
                 'message' => 'Logged in successfully',
-                'token' => $user->createToken("API TOKEN")-plainTextToken()
+                'token' => $user->createToken("API TOKEN")->plainTextToken
             ], 200);  
         }
-        catch(\Throwable $err){
-            \Log::error($err);
-            return response()->json([
-                'status' => false,
-                'message' => 'An error occured,please try again',
-            ],500);
-        }
-    }
 
     public function logout(Request $request){
-        try{
-            $request->user()->tokens()->delete();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Logout Successful',
-            ], 200);
-        }
-        catch(\Throwable $err){
-            return response()->json([
-                'status' => false,
-                'message' => 'There was an error, please try again later: ' . $err->getMessage(),
-            ], 500);
-        }
+    $request->user()->tokens()->delete();
+    return response()->json([
+            'status' => true,
+            'message' => 'Logout Successful',
+        ], 200);
     }
 }
