@@ -3,117 +3,114 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\View; 
+use Illuminate\Support\Facades\Validator; 
+use Illuminate\Support\Facades\Input; 
+use Illuminate\Support\Facades\Redirect; 
+use Illuminate\Support\Facades\Session; 
+use App\Models\User; 
 
 class UserController extends Controller
-{     
-    public function createUser(Request $request){
-        // This function creates a user and saves it in the DB
-            $Vuser = Validator::make($request->all(), [
-                'name' => 'required',
-                'email' => 'required|email|unique:users,email',
-                'password' => 'required|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).*$/|confirmed',
-            ]);
+{
+    public function index()
+    {
+        $users = User::all();
 
-            // Just to check whether the parameters provided are actually unique or provided
-            if ($Vuser->fails()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'validation error',
-                    'error' => $Vuser->errors()
-                ], 401);
-            }
-
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password)
-            ]);
-            // This will return the user indicating that the user has been
-            // created. In addition, it creates a token for that user
-            return response()->json([
-                'status' => true,
-                'message' => 'User Created Successfully',
-                'token' => $user->createToken("API TOKEN")->plainTextToken
-            ], 200);
+        return View::make('users.index') ->with('user', $users);
     }
 
-    public function read(Request $request){
-        $userRead = auth()->user();
-        if($userRead){
-            $name = $userRead->name;
-            $email = $userRead->email;
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        return View::make('users.create');
+    }
 
-            return response()->json([
-                'status' => true,
-                'data' => [
-                    'name' => $name,
-                    'email' => $email,
-                ],
-            ]);
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        $validate = [
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required',
+        ];
+
+        $validator = Validator::make(Input::all(), $validate);
+
+        if($validator -> fails()){
+            return Redirect::to('users/create')->withErrors($validator)
+            ->withInput($request->except('password'));
+        } else{
+            $user = new User;
+            $user->name= Input::get('name');
+            $user->name= Input::get('email');
+            $user->password = bcrypt(input::get('password'));
+            $user->save();
+
+            Session::flash('message', 'User Created Successfully');
+            return Redirect::to('users');
+            
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(User $user)
+    {
+        //the compact function is just used for the sake of representing th data via an array
+        return View::make('users.show', compact('user'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update($id)
+    {
+        $validate = array(
+            'name' => 'required',
+            'email' => 'required|email',
+            'password' => 'required'
+        );
+
+        $validator = Validator::make(Input::all(), $validate);
+
+        if($validator-> fails()){
+            return Redirect::to('users/' . $id . '/edit') -> withErrors($validator)
+            ->withInput(Input::expect('password'));
         }
         else{
-            return response()->json([
-                'status' => false,
-                'message' => 'No user to return',
-            ]);
+            $user = User::findOrFail($id);
+            $user->name = Input::get('name');
+            $user->email = Input::get('email');
+            $user->password = Input::get('password');
+            $user->save();
+
+            Session::flash('message', 'Successfully Updated');
+            return Redirect::to('users');
         }
     }
 
-    public function Update(Request $request){
-        $user = auth()->user();
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);//to handle not the case where the user is not found
+        $user->delete();
 
-        $request->validate([
-            'name' => 'string',
-            'email' => ['email', Rule::unique('users')->ignore(auth()->user()-id)],
-            'password' => 'min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).*$/',
-        ]);
-
-        if($request->has('name')){
-            $user->name = $request->input('name');
-        }
-
-        if($request->has('email')){
-            $user->email = $request->input('email');
-        }
-
-        if($request->has('password')){
-            $user->password = Hash::make($request->input('password'));
-        }
-
-        $user->save();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'User has been updated',
-            'data' => [
-                'name' => $user->name,
-                'email' => $user->email,
-            ],
-        ]);
-    }
-
-    public function Delete(Request $request){
-        $userDeleted = auth()->user();
-
-        if($user){
-            $userDeleted->delete();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'User has been deleted',
-            ]);
-        }
-        else{
-            return response()->json([
-                'status' => false,
-                'message' => 'User not found',
-            ]);
-        }
+        Session::flash('message', 'Successfully deleted');
+        return Redirect::to('users');
     }
 }
