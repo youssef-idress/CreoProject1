@@ -19,6 +19,6 @@ use App\Http\Controllers\UserController;
 Route::post('/auth/login', [SessionController::class, 'login']);
 Route::post('/auth/logout', [SessionController::class, 'logout'])->middleware('auth:sanctum');
 Route::middleware(['auth:sanctum']->group(function() {
-  Route::resource('users', UserController::class);
+  Route::apiResource('users', UserController::class);
 }));
 ?>

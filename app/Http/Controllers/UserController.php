@@ -24,24 +24,18 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        $validate = $request->validate([
+        $data = $request->validate([
             'name' => 'required',
             'email' => 'required|email|unique:users',
             'password' => 'required',
         ]);
-        if($validate){
-            $user = new User;
-            $user->name= Input::get('name');
-            $user->email= Input::get('email');
-            $user->password = bcrypt(Input::get('password'));
-            $user->save(); 
-        }
-        else{
-            return response() ->json([
-                'status' => false,
-                'message' => 'store failed',
-            ]);
-        }
+
+        $user = User::create($data);
+        $user->save(); 
+        return response() ->json([
+            'status' => true,
+            'message' => 'Store was Successful',
+        ]);
     }
 
     /**
@@ -50,7 +44,13 @@ class UserController extends Controller
     public function show(User $user)
     {
         //the compact function is just used for the sake of representing th data via an array
-        return View::make('users.show', compact('user'));
+        return response() ->json([
+            'status' => true,
+            'user' => [
+                'name: ' => $user->name,
+                'email: ' => $user->email,
+            ],
+        ], 200);
     }
 
 
@@ -59,24 +59,21 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validate = $request->validate(array(
+        $data = $request->validate(array(
             'name' => 'required',
             'email' => 'required|email',
             'password' => 'required'
         ));
 
-        if($validate){
-            $user = User::findOrFail($id);
-            $user->name = Input::get('name');
-            $user->email = Input::get('email');
-            $user->password = Input::get('password');
-            $user->save();
-        } else{
-            return response() ->json([
-                'status' => false,
-                'message' => 'Update Failed',
-            ]);
-        }
+        $user = User::findOrFail($id);
+        $user->name = Input::get('name');
+        $user->email = Input::get('email');
+        $user->password = Input::get('password');
+        $user->save();
+        return response() ->json([
+            'status' => true,
+            'message' => 'Update Success',
+        ], 200);
     }
 
     /**
