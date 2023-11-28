@@ -41,8 +41,8 @@ class SessionController extends Controller
         }
 
     public function logout(Request $request){
-    $request->user()->tokens()->delete();
-    return response()->json([
+        $request->user()->tokens()->delete();
+        return response()->json([
             'status' => true,
             'message' => 'Logout Successful',
         ], 200);

@@ -20,39 +20,27 @@ class UserController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return View::make('users.create');
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
-        $validate = [
+        $validate = $request->validate([
             'name' => 'required',
             'email' => 'required|email|unique:users',
             'password' => 'required',
-        ];
-
-        $validator = Validator::make(Input::all(), $validate);
-
-        if($validator -> fails()){
-            return Redirect::to('users/create')->withErrors($validator)
-            ->withInput($request->except('password'));
-        } else{
+        ]);
+        if($validate){
             $user = new User;
             $user->name= Input::get('name');
-            $user->name= Input::get('email');
-            $user->password = bcrypt(input::get('password'));
-            $user->save();
-
-            Session::flash('message', 'User Created Successfully');
-            return Redirect::to('users');
-            
+            $user->email= Input::get('email');
+            $user->password = bcrypt(Input::get('password'));
+            $user->save(); 
+        }
+        else{
+            return response() ->json([
+                'status' => false,
+                'message' => 'store failed',
+            ]);
         }
     }
 
@@ -65,40 +53,29 @@ class UserController extends Controller
         return View::make('users.show', compact('user'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update($id)
+    public function update(Request $request, $id)
     {
-        $validate = array(
+        $validate = $request->validate(array(
             'name' => 'required',
             'email' => 'required|email',
             'password' => 'required'
-        );
+        ));
 
-        $validator = Validator::make(Input::all(), $validate);
-
-        if($validator-> fails()){
-            return Redirect::to('users/' . $id . '/edit') -> withErrors($validator)
-            ->withInput(Input::expect('password'));
-        }
-        else{
+        if($validate){
             $user = User::findOrFail($id);
             $user->name = Input::get('name');
             $user->email = Input::get('email');
             $user->password = Input::get('password');
             $user->save();
-
-            Session::flash('message', 'Successfully Updated');
-            return Redirect::to('users');
+        } else{
+            return response() ->json([
+                'status' => false,
+                'message' => 'Update Failed',
+            ]);
         }
     }
 
@@ -110,7 +87,5 @@ class UserController extends Controller
         $user = User::findOrFail($id);//to handle not the case where the user is not found
         $user->delete();
 
-        Session::flash('message', 'Successfully deleted');
-        return Redirect::to('users');
     }
 }
